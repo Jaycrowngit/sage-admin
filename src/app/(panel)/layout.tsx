@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Avatar } from "@/components/Avatar";
 import { BrandLogo } from "@/components/BrandLogo";
 import { api, getAuthToken, removeAuthToken } from "@/lib/api";
 import { AdminContext } from "@/lib/admin-context";
@@ -160,7 +161,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
           <div className="admin-header-actions">
             <div className="admin-user-badge">
-              <div className="admin-avatar">{admin.name.charAt(0).toUpperCase()}</div>
+              <Avatar name={admin.name} src={admin.avatar_url} />
               <div className="admin-user-info">
                 <span className="admin-user-name">{admin.name}</span>
                 <span className="admin-user-role">Administrator</span>

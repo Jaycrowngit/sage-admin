@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { Avatar } from "@/components/Avatar";
 import { PageHeader } from "@/components/PageHeader";
-import { api, API_BASE_URL } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useAdmin } from "@/lib/admin-context";
+import { imageFileToAvatar } from "@/lib/avatar";
 import { errorMessage } from "@/lib/format";
 
 export default function SettingsPage() {
@@ -18,6 +20,47 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoSuccess, setPhotoSuccess] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow picking the same file again
+    if (!file) return;
+
+    setPhotoSuccess(null);
+    setPhotoError(null);
+    setPhotoBusy(true);
+    try {
+      const avatar = await imageFileToAvatar(file);
+      const res = await api.uploadAvatar(avatar);
+      setAdmin({ ...admin, ...res.data });
+      setPhotoSuccess("Profile picture updated.");
+    } catch (err) {
+      setPhotoError(errorMessage(err, "Failed to upload profile picture."));
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  async function handlePhotoRemove() {
+    if (!confirm("Remove your profile picture?")) return;
+
+    setPhotoSuccess(null);
+    setPhotoError(null);
+    setPhotoBusy(true);
+    try {
+      const res = await api.removeAvatar();
+      setAdmin({ ...admin, ...res.data, avatar_url: null });
+      setPhotoSuccess("Profile picture removed.");
+    } catch (err) {
+      setPhotoError(errorMessage(err, "Failed to remove profile picture."));
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -129,17 +172,33 @@ export default function SettingsPage() {
 
         <div className="admin-settings-card">
           <div className="admin-settings-card-header">
-            <h2>Connection</h2>
+            <h2>Profile Picture</h2>
           </div>
           <div className="admin-settings-card-body">
-            <div className="admin-data-row">
-              <span className="admin-data-row-label">API endpoint</span>
-              <span className="admin-data-row-value mono">{API_BASE_URL}</span>
+            {photoSuccess && <div className="admin-success-msg">{photoSuccess}</div>}
+            {photoError && <div className="admin-error-msg">{photoError}</div>}
+
+            <div className="admin-photo-row">
+              <Avatar name={admin.name} src={admin.avatar_url} className="admin-avatar admin-avatar-xl" />
+              <div className="admin-photo-actions">
+                <label className="admin-btn-primary" aria-disabled={photoBusy}>
+                  {photoBusy ? "Uploading…" : admin.avatar_url ? "Change photo" : "Upload photo"}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="admin-visually-hidden"
+                    onChange={handlePhotoChange}
+                    disabled={photoBusy}
+                  />
+                </label>
+                {admin.avatar_url && (
+                  <button type="button" className="admin-btn-secondary" onClick={handlePhotoRemove} disabled={photoBusy}>
+                    Remove
+                  </button>
+                )}
+                <p className="admin-form-hint">JPG, PNG or WebP. The image is cropped to a square.</p>
+              </div>
             </div>
-            <p className="admin-form-hint">
-              This panel uses the same backend as the student site. Set <code>NEXT_PUBLIC_API_URL</code> in{" "}
-              <code>.env.local</code> to point it elsewhere.
-            </p>
           </div>
         </div>
       </div>

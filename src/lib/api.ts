@@ -172,6 +172,9 @@ export const api = {
   logout: () => request<null>("auth/logout", send("POST")),
   updateProfile: (payload: { name?: string; phone?: string; bio?: string; password?: string }) =>
     request<User>("auth/profile", send("PUT", payload)),
+  /** `avatar` is a data URL produced by imageFileToAvatar(). */
+  uploadAvatar: (avatar: string) => request<User>("auth/avatar", send("POST", { avatar })),
+  removeAvatar: () => request<User>("auth/avatar", send("DELETE")),
 
   // Overview
   dashboard: () => request<Dashboard>("admin/dashboard"),

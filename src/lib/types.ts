@@ -39,6 +39,7 @@ export type User = {
   role: Role;
   phone?: string | null;
   bio?: string | null;
+  avatar_url?: string | null;
   created_at?: string;
   courses?: CourseRef[];
   total_attempts?: number;
